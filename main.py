@@ -1,6 +1,10 @@
+# -*- coding: utf-8 -*-
+from tqdm import tqdm
+import openai
 import pandas as pd
 from openai import OpenAI
 import httpx
+import openpyxl
 
 client = OpenAI(
     base_url="https://api.xty.app/v1",
@@ -14,10 +18,10 @@ client = OpenAI(
 
 def classfication(msg):
     prompt = """
-    现在你需要根据传入的文章内容，文章进行分类，从以下词组中选择最适合的分类标签：
-	科学技术观，科技发展的趋势，基础研究的作用，科学和技术的关系，科学技术与社会的关系；科学技术功能，科学技术生产力功能，科学技术是第一生产力论，创新驱动发展；科学技术功能实现，科技体制改革，教育和人才的支撑作用，全球科技",
-     可以选择一个或多个词组(最多不超过四个)。如果你认为文章内容与以上几个分类标签不合适，可以输入你认为合适的分类标签，但请标注。
-     注意：只返回分类标签即可，不要给出多余的句子。
+    现在你需要根据传入的文本进行关键词提取、主题分析、情绪分析(只有积极或者消极，没有中性)和使用倾向，用中文分号分隔每一类标签。
+    对于无法提取关键词、主题的文本，返回 无法提取 即可，不要道歉，不要返回其他无关的语句。现提供以下示例:
+    输入：目前的大模型不具备智能，本质还是函数拟合，跟人工智能没啥关系！
+    你的回答：智能，本质，函数拟合，人工智能；技术本质；消极；无倾向
      """
 
     completion = client.chat.completions.create(
@@ -28,12 +32,26 @@ def classfication(msg):
         ],
         temperature=0.8
     )
-    print(completion.choices[0].message.content)
+    return completion.choices[0].message.content
 
-fiLe_path = "./contents.xlsx"
-df = pd.read_excel(fiLe_path)
-contents = df['content']
+
+file_path = "./data/data_clear_LM+LLM（full version).xlsx"
+file = openpyxl.load_workbook(file_path)
+sheet = file.active  # 确定当前活动的工作表
+df = pd.read_excel(file_path)
+contents = df['评论']
 contents = [str(i).replace('\\', '') for i in contents if pd.notna(i)]
-for content in contents:
-    msg = content
-    classfication(msg)
+i = 2
+for content in tqdm(contents, desc="关键词写入", ncols=100):
+    try:
+        msg = content
+        response = classfication(msg)
+        parts = response.split('；')
+        for j, part in enumerate(parts):
+            column_to_write = j + 5
+            sheet.cell(row=i, column=column_to_write).value = part.strip()
+            file.save(file_path)
+    except openai.BadRequestError as e:
+        print("第{}条数据写入失败".format(i - 1))
+    i += 1
+print("所有数据处理完成")
