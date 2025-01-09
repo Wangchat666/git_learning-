@@ -35,6 +35,7 @@ def classfication(msg):
     return completion.choices[0].message.content
 
 
+# 需要处理的文本路径
 file_path = "./data/data_clear_LM+LLM（full version).xlsx"
 file = openpyxl.load_workbook(file_path)
 sheet = file.active  # 确定当前活动的工作表
@@ -42,13 +43,13 @@ df = pd.read_excel(file_path)
 contents = df['评论']
 contents = [str(i).replace('\\', '') for i in contents if pd.notna(i)]
 i = 2
-for content in tqdm(contents, desc="关键词写入", ncols=100):
+for content in tqdm(contents, desc="数据写入", ncols=100):
     try:
         msg = content
         response = classfication(msg)
-        parts = response.split('；')
+        parts = response.split('；')  # 使用中文分号分割字符串
         for j, part in enumerate(parts):
-            column_to_write = j + 5
+            column_to_write = j + 5  # 确定要写入的列，这里从第五列开始
             sheet.cell(row=i, column=column_to_write).value = part.strip()
             file.save(file_path)
     except openai.BadRequestError as e:
