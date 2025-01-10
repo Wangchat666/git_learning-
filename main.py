@@ -8,7 +8,7 @@ import openpyxl
 
 client = OpenAI(
     base_url="https://api.xty.app/v1",
-    api_key="sk-n7PZWcYgdjdgWOIE8aFa5e5fCdBd4193B985198878726d77",
+    api_key="Your_API-KEY",
     http_client=httpx.Client(
         base_url="https://api.xty.app/v1",
         follow_redirects=True,
