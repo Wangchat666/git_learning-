@@ -25,7 +25,7 @@ def classfication(msg):
      """
 
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-3.5-turbo",  # 模型名称
         messages=[
             {'role': 'system', 'content': prompt},
             {'role': 'user', 'content': msg}
